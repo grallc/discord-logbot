@@ -1,0 +1,12 @@
+# Node
+node_modules
+build
+npm-debug.log
+.env
+
+
+# PHPStorm
+.idea/
+
+# VSCode
+.vscode
