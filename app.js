@@ -30,10 +30,14 @@ app.get('/', (req, res) => {
     res.send("<h3>Bienvenue sur l'API de LogBot</h3>");
 });
 
-app.get('/guilds/:id', (req, res) => {
+app.get('/messages', (req, res) => {
     var id = req.params.id;
 
-    Message.find({guildID: id}).then((messages) => {
+    Message.find({
+        guildID: { $exists: true, $ne: null, $eq: req.query.guild}
+        // Not working
+        // authorID: { $exists: true, $ne: null, $eq: req.query.author}
+    }).then((messages) => {
         if(messages.length > 0){
            return res.send(JSON.stringify({         
                 code: 200,
@@ -44,7 +48,7 @@ app.get('/guilds/:id', (req, res) => {
 
         res.send(JSON.stringify({
             code: 404,
-            message: `No messages found, may be caused by an incorrect guild ID`
+            message: `No messages found, may be caused by an incorrect parameter`
         }));
     }, (e) => {
         res.status(400).send(e);
