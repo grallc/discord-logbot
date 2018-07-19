@@ -3,9 +3,10 @@ const mongoose = require('mongoose');
 const messageSchema =  mongoose.Schema({
     _id: String,
     originalContent: String,
+    guildID: String,
     authorID: String,
     authorUsername: String,
-    creationDate: Date,
+    creationDate: String,
     informations: {
         status: String,
         currentContent: String,
