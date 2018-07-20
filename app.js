@@ -4,6 +4,7 @@ const fs = require('fs');
 const yargs = require('yargs');
 const bodyParser = require('body-parser');
 const express = require('express');
+const mkdirp = require('mkdirp');
 
 const {mongoose} = require('./db/mongoose');
 const Message = require('./models/message');
@@ -39,16 +40,16 @@ app.get('/messages', (req, res) => {
         // authorID: { $exists: true, $ne: null, $eq: req.query.author}
     }).then((messages) => {
         if(messages.length > 0){
-           return res.send(JSON.stringify({         
+           return res.send(JSON.stringify({
                 code: 200,
                 message: `Successfully retrieved ${messages.length} message(s)`,
                 messages
             }));
         }
 
-        res.send(JSON.stringify({
+        res.status(404).send(JSON.stringify({
             code: 404,
-            message: `No messages found, may be caused by an incorrect parameter`
+            message: `No messages found, it may be caused by an incorrect parameter`
         }));
     }, (e) => {
         res.status(400).send(e);
@@ -69,38 +70,57 @@ client.on('ready', async () => {
 
     client.user.setActivity("ce que vous dites", {type: "WATCHING"});
 
-    // Work in progress...
-    // client.guilds.forEach((guild) => {
-    //     fs.writeFile(`./logs/${guild.id}/1.txt`, "Hey there!",{ flag: 'wx' }, (err) => {
-    //         if(err){
-    //             return console.log(err);
-    //         }
-    //         console.log('The file was saved');
-    //     });
-    // })
+    // Create the log txt on date of connection
+     client.guilds.forEach((guild) => {
+       mkdirp(`${__dirname}/logs/${guild.id}`,function(err){
+         if(err) throw err;
+         fs.writeFile(`${__dirname}/logs/${guild.id}/${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`, `Guild ID = ${guild.id} - File = ${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`,(err) => {
+             if(err){
+                 throw err;
+             }
+         });
+       });
+     })
+
+
+
 });
 
 // Send to the database each message
 client.on('message', (msg) => {
     var message = new Message({
-        _id: msg.id,
+        messageIS: msg.id,
         guildID: msg.guild.id,
         originalContent: msg.content.toString(),
         authorID: msg.author.id,
         authorUsername: msg.author.tag,
-        creationDate: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
-        informations: [{
-            status: "OK",
-            currentContent: msg.content.toString(),
-            lastEventDate: new Date()
-        }]
+        informations: {
+            currentContent: msg.content.toString()
+        }
     });
 
     message.save().then(() => {
-        console.log(`Message #${msg.id} ("${msg.content.toString()}") has been saved into the Database`);
-    }, (e) => {
-        console.log(`An error ('${e}) has occured while saving the Message ${msg.id}`);
-    });
+      let latestFile;
+
+      fs.readdir(`${__dirname}/logs/${message.guild.id}/`, function(err, files) {
+        let beforeFileDate;
+        files.forEach(file => {
+          if(file.statSync(file)['mtime'] < beforeFileDate){
+
+          }
+        });
+
+        // Write new log in latest log file
+        fs.writeFile(`${__dirname}/logs/${message.guild.id}/${latestFile}.txt`, `Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) has been saved into the Database`,(err) => {
+            if(err){
+                throw err;
+            }
+        });
+          console.log(`Message #${msg.id} ("${msg.content.toString()}") has been saved into the Database`);
+        }, (e) => {
+          console.log(`An error ('${e}) has occured while saving the Message ${msg.id}`);
+        });
+      });
 });
 
 //  Log the bot using the token provided

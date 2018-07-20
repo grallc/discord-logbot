@@ -1,16 +1,22 @@
 const mongoose = require('mongoose');
 
 const messageSchema =  mongoose.Schema({
-    _id: String,
     originalContent: String,
+    messageID: String,
     guildID: String,
     authorID: String,
     authorUsername: String,
-    creationDate: String,
+    creationDate: {
+      type: String,
+      default: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
+    },
     informations: {
-        status: String,
+        status: {type: String, default: 'OK'},
         currentContent: String,
-        lastEventDate: String
+        lastEventDate: {
+          type: String,
+          default: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
+        },
     }
 });
 
