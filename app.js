@@ -11,11 +11,12 @@ const Message = require('./models/message');
 
 const app = express();
 
+const port = process.env.PORT || 3000;
+
 
 // Get launch arguments, mainly token ("node [file].js -t [token]")
 const argv = yargs.options({
     t: {
-        demand: true,
         alias: 'token',
         describe: 'Bot private token',
         string: true
@@ -23,7 +24,10 @@ const argv = yargs.options({
     }
 }).argv;
 
-
+if(!argv.token && !process.env.DISCORD_TOKEN){
+   console.log('Please specify a Token!');
+   process.exit();
+}
 
 app.use(bodyParser.json());
 
@@ -56,8 +60,6 @@ app.get('/messages', (req, res) => {
     });
 
 });
-
-const port = 3000;
 
 app.listen(port, () => {
     console.log(`Express server started on port ${port}`);
@@ -124,4 +126,4 @@ client.on('message', (msg) => {
 });
 
 //  Log the bot using the token provided
-client.login(argv.token);
+client.login(argv.token || process.env.DISCORD_TOKEN);

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost:27017/LogBot', {useNewUrlParser: true});
+mongoose.connect(process.env.MONGODB_ADDON_URI || 'mongodb://localhost:27017/LogBot', {useNewUrlParser: true});
 
 module.exports = {mongoose};
