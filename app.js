@@ -13,6 +13,8 @@ const app = express();
 
 const port = process.env.PORT || 3000;
 
+var fileName = '';
+
 
 // Get launch arguments, mainly token ("node [file].js -t [token]")
 const argv = yargs.options({
@@ -45,6 +47,9 @@ app.get('/messages', (req, res) => {
 	Message.find({
 		// Find by guild
 		guildID: (req.query.guild) ? req.query.guild : {$ne:null},
+		channelName:(req.query.channelname) ? req.query.guild : {$ne:null},
+		channelID:(req.query.channelname) ? req.query.guild : {$ne:null},
+
 		// Find by author
 		'modifications.creation.authorID': (req.query.author) ? req.query.author : {$ne:null},
 		//  Find with REGEX
@@ -85,17 +90,21 @@ client.on('ready', async () => {
 
 	client.user.setActivity("ce que vous dites", {type: "WATCHING"});
 
-	// Create the log txt on date of connection
-	 // client.guilds.forEach((guild) => {
-	 //   mkdirp(`${__dirname}/logs/${guild.id}`,function(err){
-		//  if(err) throw err;
-		//  fs.writeFile(`${__dirname}/logs/${guild.id}/${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`, `Guild ID = ${guild.id} - File = ${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`,(err) => {
-		// 	 if(err){
-		// 		 throw err;
-		// 	 }
-		//  });
-	 //   });
-	 //})
+	 // Create the log txt on date of connection
+	  client.guilds.forEach((guild) => {
+	    mkdirp(`${__dirname}/logs/${guild.id}`,function(err){
+		  if(err) throw err;
+		// Create new file and write some informations
+		  fs.writeFile(`${__dirname}/logs/${guild.id}/${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`,   `--------------------------------------------------------------\n` +
+		  																													`Guild ID = ${guild.id} - File = ${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt` +
+																													`\n--------------------------------------------------------------\n`,(err) => {
+			if(err){
+		 		 throw err;
+		 	 }
+		  });
+		});
+		fileName = `${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`
+	 })
 
 
 
@@ -107,6 +116,8 @@ client.on('message', (msg) => {
 		messageID: msg.id,
 		guildID: msg.guild.id,
 		currentContent: msg.content.toString(),
+		channelName: msg.channel.name,
+		channelID: msg.channel.id,
 
 		modifications: {
 			creation: {
@@ -129,10 +140,11 @@ client.on('message', (msg) => {
 	});
 
 	message.save().then(() => {
-		// To do: log in the latest log file
-	  // let latestFile;
+
+		// DEPRECATED
+		// let latestFile;
 		//
-	  // fs.readdir(`${__dirname}/logs/${message.guild.id}/`, function(err, files) {
+	  	// fs.readdir(`${__dirname}/logs/${message.guild.id}/`, function(err, files) {
 		// let beforeFileDate;
 		// files.forEach(file => {
 		//   if(file.statSync(file)['mtime'] < beforeFileDate){
@@ -140,17 +152,16 @@ client.on('message', (msg) => {
 		//   }
 		// });
 
-		// Write new log in latest log file
-		// fs.writeFile(`${__dirname}/logs/${message.guild.id}/${latestFile}.txt`, `Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) has been saved into the Database`,(err) => {
-		// 	if(err){
-		// 		throw err;
-		// 	}
-		// });
-		  console.log(`Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) has been saved into the Database`);
+		 //Write new log in latest log file
+		 fs.appendFile(`${__dirname}/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been saved into the Database`,(err) => {
+		 	if(err){
+		 		throw err;
+		 	}
+		 });
+		 console.log(`Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) in channel "${msg.channel.name}" (${msg.channel.id}) has been saved into the Database`);
 		}, (e) => {
 		  console.log(`An error ('${e}) has occured while saving the Message ${msg.id}`);
 		});
-	  //});
 
 }); 
 
@@ -178,7 +189,13 @@ client.on('messageDelete', (msg) => {
      }, {
          returnOriginal: false
      }).then((result) => {
-	 	console.log(`Message #${msg.id} ("${msg.content.toString()}") in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) has been deleted by ${msg.author.tag} (${msg.author.id})`);
+		 console.log(`Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) in channel "${msg.channel.name}" (${msg.channel.id}) has been deleted by ${msg.author.tag} (${msg.author.id})`);
+		 
+		 fs.appendFile(`${__dirname}/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been deleted by ${msg.author.tag} (${msg.author.id})`,(err) => {
+			if(err){
+				throw err;
+			}
+		});
      });
 });
 
@@ -193,7 +210,7 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 			currentContent: newMessage.content.toString()
 		 },
 		 $add: {
-			 
+
 		 }
 	})
 });
