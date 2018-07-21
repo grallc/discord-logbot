@@ -20,7 +20,6 @@ const argv = yargs.options({
 		alias: 'token',
 		describe: 'Bot private token',
 		string: true
-
 	}
 }).argv;
 
@@ -44,10 +43,17 @@ app.get('/messages', (req, res) => {
 
     // GET ALL MESSAGES CORRESPONDING TO REQUEST
 	Message.find({
+		// Find by guild
 		guildID: (req.query.guild) ? req.query.guild : {$ne:null},
-        authorID: (req.query.author) ? req.query.author : {$ne:null},
-        originalContent: (req.query.originalcontent) ? req.query.originalcontent : {$ne:null},
-        'informations.currentContent': /(req.query.content) ? req.query.content : {$ne:null}/
+		// Find by author
+		'modifications.creation.authorID': (req.query.author) ? req.query.author : {$ne:null},
+		//  Find with REGEX
+		'modifications.creation.newContent': new RegExp((req.query.originalcontent) ? req.query.originalcontent : {$ne:null}, 'ig'),
+		currentContent: new RegExp((req.query.content) ? req.query.content : {$ne:null}, 'ig')
+
+		// DEPRECATED
+		// authorID: (req.query.author) ? req.query.author : {$ne:null},
+        //'informations.currentContent': new RegExp((req.query.content) ? req.query.content : {$ne:null}, 'ig')
 	}).then((messages) => {
         // IF MESSAGE(S) FOUND
         if(messages.length > 0){
@@ -98,14 +104,28 @@ client.on('ready', async () => {
 // Send to the database each message
 client.on('message', (msg) => {
 	var message = new Message({
-		messageIS: msg.id,
+		messageID: msg.id,
 		guildID: msg.guild.id,
-		originalContent: msg.content.toString(),
-		authorID: msg.author.id,
-		authorUsername: msg.author.tag,
-		informations: {
-			currentContent: msg.content.toString()
+		currentContent: msg.content.toString(),
+
+		modifications: {
+			creation: {
+				authorID: msg.author.id,
+				authorUsername: msg.author.tag,
+				newContent: msg.content.toString(),
+				date: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')	
+			}
 		}
+
+		// DEPRECATED
+		// authorID: msg.author.id,
+		// authorUsername: msg.author.tag,
+		// creationDate: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+		// originalContent: msg.content.toString(),
+		// informations: {
+		// 	currentContent: msg.content.toString(),
+		// 	lastEventDate: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
+		// }
 	});
 
 	message.save().then(() => {
@@ -126,7 +146,7 @@ client.on('message', (msg) => {
 		// 		throw err;
 		// 	}
 		// });
-		  console.log(`Message #${msg.id} ("${msg.content.toString()}") has been saved into the Database`);
+		  console.log(`Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) has been saved into the Database`);
 		}, (e) => {
 		  console.log(`An error ('${e}) has occured while saving the Message ${msg.id}`);
 		});
@@ -136,22 +156,46 @@ client.on('message', (msg) => {
 
 client.on('messageDelete', (msg) => {
 
-	console.log(`0 - Message #${msg.id} ("${msg.content.toString()}") has been deleted by ${msg.author.tag} (${msg.author.id})`);
+	 Message.findOneAndUpdate({
+         messageID: msg.id
+     }, {
+         $set: {
+
+			currentContent: 'EMPTY',
+			'modifications.deletion.newContent': 'EMPTY',
+			'modifications.deletion.date': new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+			'modifications.deletion.authorName': msg.author.tag,
+			'modifications.deletion.authorID': msg.author.id
 
 
-	// Message.findOneAndUpdate({
-    //     messageID: msg.id
-    // }, {
-    //     $set: {
-    //         informations: {
-	// 			status: 'DELETED',
-	// 			lastEventDate: new Date()			}
-    //     }
-    // }, {
-    //     returnOriginal: false
-    // }).then((result) => {
-	// 	console.log(`1 - Message #${msg.id} ("${msg.content.toString()}") has been deleted by ${msg.author.tag} (${msg.author.id}) => ${result}`);
-    // });
+			// DEPRECATED
+			// 'informations.status': 'DELETED',
+			// 'informations.lastEventDate': new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
+
+			//  Not working (for now)
+			// 'informations.removedBy': msg.author.tag
+         }
+     }, {
+         returnOriginal: false
+     }).then((result) => {
+	 	console.log(`Message #${msg.id} ("${msg.content.toString()}") in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) has been deleted by ${msg.author.tag} (${msg.author.id})`);
+     });
+});
+
+
+client.on('messageUpdate', (oldMessage, newMessage) => {
+	console.log(`${oldMessage.content.toString()} => ${newMessage.content.toString()}`);
+
+	Message.findOneAndUpdate({
+		messageID: oldMessage.id
+	}, {
+		$set: {
+			currentContent: newMessage.content.toString()
+		 },
+		 $add: {
+			 
+		 }
+	})
 });
 
 //  Log the bot using the token provided
