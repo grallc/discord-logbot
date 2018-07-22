@@ -11,8 +11,10 @@ const Message = require('./models/message');
 
 const app = express();
 
+//  Express port
 const port = process.env.PORT || 3000;
 
+// Stock the current log filename
 var fileName = '';
 
 
@@ -25,18 +27,23 @@ const argv = yargs.options({
 	}
 }).argv;
 
+// Stop the application if no token is specified
 if(!argv.token && !process.env.DISCORD_TOKEN){
    console.log('Please specify a Token!');
    process.exit();
 }
 
+//  Define the Template system
 app.use(bodyParser.json());
 
+//  Home page (index.ejs): search message, go to API
 app.get('/', (req, res) => {
-    res.render('index.ejs')
-	res.end("<h3>Bienvenue sur l'API de LogBot</h3>");
+    res.setHeader('Content-Type', 'text/html');    
+    res.status(200).render('index.ejs');
+	res.end();
 });
 
+// API PAGE
 app.get('/messages', (req, res) => {
     // IGNORE CASE QUERY PARAMS
     for(let param in req.query){
@@ -79,6 +86,7 @@ app.get('/messages', (req, res) => {
 
 });
 
+//  Start express
 app.listen(port, () => {
 	console.log(`Express server started on port ${port}`);
 });
@@ -165,6 +173,7 @@ client.on('message', (msg) => {
 
 }); 
 
+// Called when a message is edited
 client.on('messageDelete', (msg) => {
 
 	 Message.findOneAndUpdate({
@@ -200,19 +209,31 @@ client.on('messageDelete', (msg) => {
 });
 
 
+// Called when a message is edited
 client.on('messageUpdate', (oldMessage, newMessage) => {
 	console.log(`${oldMessage.content.toString()} => ${newMessage.content.toString()}`);
 
+	var size = 0;
+
+	// Find the last edit number (edit-x)
+	Message.findOne({
+		messageID: oldMessage.id
+	}).then((doc) => {
+		size = Object.keys(doc.modifications).length - 1;
+	}, (err) => {
+		console.log(err);
+	});
+
+
+
 	Message.findOneAndUpdate({
 		messageID: oldMessage.id
-	}, {
+	}).then((doc) => {
 		$set: {
 			currentContent: newMessage.content.toString()
-		 },
-		 $add: {
-
-		 }
-	})
+			//'modifications.deletion.newContent': 'EMPTY'
+		}
+	}).then(() => doc);
 });
 
 //  Log the bot using the token provided

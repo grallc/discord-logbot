@@ -7,20 +7,20 @@
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "engines" : {
-    "node" : "~10.0"
+  "engines": {
+    "node": "~10.0"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.18.3",
     "discord.js": "^11.3.2",
+    "ejs": "^2.6.1",
     "express": "^4.16.3",
     "fs": "0.0.1-security",
     "mkdirp": "^0.5.1",
     "mongodb": "^3.1.1",
     "mongoose": "^5.2.4",
-    "yargs": "^12.0.1",
-    "ejs": "2.6.1"
+    "yargs": "^12.0.1"
   }
 }

@@ -1,20 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+	<title>Search a message from his content</title>
 </head>
 <body>
-    <form>
-        <input type="input" id="searchMsgContent" name="searchMsgContent" placeholder="Search message's content...">
-    </form>
-    <script rel="text/javascript">
-        (function(){
-            document.getElementById('searchMsgContent').addEventListener('keydown', function(){
-                // EVENT keyUp or Down / CHECK IF CHANGED -> STOCK IN VAR PREC VALUE AND COMPARE
+<form id="searchForm">
+	<p>Search message from content:<br>
+		<input type="radio" name="searchType" id="currentContent" checked><label for="currentContent">Current content</label><br>
+		<input type="radio" name="searchType" id="originalContent"><label for="originalContent">Original content</label><br>
+		<input type="text" id="searchMsgContent" name="searchMsgContent" placeholder="Search message's content..."><br>
+	</p>
+</form>
+<a href="./messages">Message API</a>
+<script rel="text/javascript">
+	(function(){
+		const searchInput = document.getElementById('searchMsgContent');
+		const searchType = document.getElementsByName('searchType');
+		let precSearchVal;
+		// CANCEL WRITTING ONLY WHITESPACES
+		searchInput.addEventListener('keydown', function(e){
+			// EVENT keyUp or Down / CHECK IF CHANGED -> STOCK IN VAR PREC VALUE AND COMPARE
+			if(e.keyCode === 32 && !searchInput.value && /^\s*$/g.test(searchInput.value)){
+				e.preventDefault();
+			}
+		});
+		// AJAX
+		searchInput.addEventListener('keyup', function(e){
+			// AJAX TO API
+			if(searchInput.value && !/^\s*$/g.test(searchInput.value) && searchInput.value !== precSearchVal && e.keyCode !== 32) {
+				const xhr = new XMLHttpRequest();
+				xhr.open('GET', 'messages?'+ ((searchType[0].checked) ? 'content' : 'originalcontent') + '=' + searchInput.value);
+				xhr.addEventListener('readystatechange',function () {	// RECEIVE DATAS
+					if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200){	// DATAS RECEIVED AND NO ERROR
+						const msgResult = JSON.parse(xhr.responseText);	// ALL MESSAGES FOUND
+					}
+				});
+				xhr.send(null);
+			}
+			precSearchVal = searchInput.value;
+		});
 
-                // AJAX TO API
-            });
-        })()
-    </script>
+		// DON'T SUBMIT FORM
+		document.getElementById('searchForm').addEventListener('submit', function(e){
+			e.preventDefault();
+		});
+	})()
+</script>
 </body>
 </html>
+
+<!--  {code: 200, message: "Successfully retrieved 1 message(s)", messages: Array(1)} -->
