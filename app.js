@@ -33,8 +33,12 @@ if(!argv.token && !process.env.DISCORD_TOKEN){
    process.exit();
 }
 
-//  Define the Template system
-app.use(bodyParser.json());
+app.use(
+    //  Define the Template system
+    bodyParser.json(),
+    // SET STATIC FILES -> css/js
+    express.static('public')
+);
 
 //  Home page (index.ejs): search message, go to API
 app.get('/', (req, res) => {
@@ -60,8 +64,8 @@ app.get('/messages', (req, res) => {
 		// Find by author
 		'modifications.creation.authorID': (req.query.author) ? req.query.author : {$ne:null},
 		//  Find with REGEX
-		'modifications.creation.newContent': new RegExp((req.query.originalcontent) ? req.query.originalcontent : {$ne:null}, 'ig'),
-		currentContent: new RegExp((req.query.content) ? req.query.content : {$ne:null}, 'ig')
+		'modifications.creation.newContent': (req.query.originalcontent) ? new RegExp(req.query.originalcontent, 'ig') : {$ne:null},
+		currentContent: (req.query.content) ? new RegExp(req.query.content, 'ig') : {$ne:null}
 
 		// DEPRECATED
 		// authorID: (req.query.author) ? req.query.author : {$ne:null},
@@ -69,20 +73,20 @@ app.get('/messages', (req, res) => {
 	}).then((messages) => {
         // IF MESSAGE(S) FOUND
         if(messages.length > 0){
-		   return res.send(JSON.stringify({
-				code: 200,
-				message: `Successfully retrieved ${messages.length} message(s)`,
-				messages
-			}));
-		}
-        // IF NOTHING
-		res.status(404).send(JSON.stringify({
-			code: 404,
-			message: `No messages found, it may be caused by an incorrect parameter`
-		}));
-	}, (e) => {
-		res.status(400).send(e);
-	});
+			return res.send(JSON.stringify({
+				 code: 200,
+				 message: `Successfully retrieved ${messages.length} message(s)`,
+				 messages
+			 }));
+		 }
+		 // IF NOTHING
+		 res.status(404).send(JSON.stringify({
+			 code: 404,
+			 message: `No messages found, it may be caused by an incorrect parameter`
+		 }));
+	 }, (e) => {
+		 res.status(400).send(e);
+	 });
 
 });
 
@@ -209,32 +213,37 @@ client.on('messageDelete', (msg) => {
 });
 
 
-// Called when a message is edited
+
 client.on('messageUpdate', (oldMessage, newMessage) => {
-	console.log(`${oldMessage.content.toString()} => ${newMessage.content.toString()}`);
 
-	var size = 0;
+ 	Message.findOne({
+ 		messageID: oldMessage.id
+ 	}).then((doc) => {
 
-	// Find the last edit number (edit-x)
-	Message.findOne({
-		messageID: oldMessage.id
-	}).then((doc) => {
-		size = Object.keys(doc.modifications).length - 1;
-	}, (err) => {
-		console.log(err);
-	});
-
-
-
-	Message.findOneAndUpdate({
-		messageID: oldMessage.id
-	}).then((doc) => {
-		$set: {
-			currentContent: newMessage.content.toString()
-			//'modifications.deletion.newContent': 'EMPTY'
+		var newEdition = {
+			newContent: newMessage.content.toString(),
+			date: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
 		}
-	}).then(() => doc);
+		
+ 	   Message.findOneAndUpdate({
+ 		   messageID: oldMessage.id
+ 	   }, {
+ 		   $set: {
+				currentContent: newMessage.content.toString(),
+			},
+			$push: {
+				'modifications.editions': newEdition
+			
+			}
+ 	   }, {
+ 	   returnOriginal: false  
+    }).then((result) => {
+		console.log(`Message #${oldMessage.id} ("${oldMessage.content.toString()}") posted by ${oldMessage.author.tag} (${oldMessage.author.id}) in Guild "${oldMessage.guild.name}" (${oldMessage.guild.id.toString()}) in channel "${oldMessage.channel.name}" (${newMessage.channel.id}) has been edited : "${newMessage.content.toString()}"`);
+	})}, (err) => {
+ 		console.log(err);
+ 	});
 });
+
 
 //  Log the bot using the token provided
 client.login(argv.token || process.env.DISCORD_TOKEN);

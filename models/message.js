@@ -5,6 +5,7 @@ const messageSchema =  mongoose.Schema({
     currentContent: String,
     messageID: String,
     guildID: String,
+    guildName: String,
     authorID: String,
     authorUsername: String,
     channelID: String,
