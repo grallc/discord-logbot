@@ -49,6 +49,37 @@ app.get('/', (req, res) => {
 	res.end();
 });
 
+app.get('/logs', (req, res) => {
+
+	if(!req.query.guild){
+		res.status(400).send(JSON.stringify({
+			code: 400,
+			message: 'Please specify a valid Guild ID'
+		}));
+	}
+
+	fs.readdir(`${__dirname}/public/logs/${req.query.guild}`, (err, files) => {
+		if(err){
+			res.status(404).send(JSON.stringify({
+				code: 404,
+				message: `An error has occured while listing files. May be caused by an incorrect Guild ID`		
+			}));
+			return console.log(err);
+		}
+
+		res.status(200).render('logs.ejs', {files, guild: req.query.guild});
+		res.end();
+		// res.status(200).send(JSON.stringify({
+		// 	code: 200,
+		// 	message: `Successfully retrieved ${files.length} logs file(s)`,
+		// 	files
+		// }));
+		// files.forEach(file => {
+		//   res.status(200).render(file.name);
+		// });
+	})
+})
+
 
 // API PAGE
 app.get('/messages', (req, res) => {
@@ -107,10 +138,10 @@ client.on('ready', async () => {
 
 	 // Create the log txt on date of connection
 	  client.guilds.forEach((guild) => {
-	    mkdirp(`${__dirname}/logs/${guild.id}`,function(err){
+	    mkdirp(`${__dirname}/public/logs/${guild.id}`,function(err){
 		  if(err) throw err;
 		// Create new file and write some informations
-		  fs.writeFile(`${__dirname}/logs/${guild.id}/${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`,   `--------------------------------------------------------------\n` +
+		  fs.writeFile(`${__dirname}/public/logs/${guild.id}/${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt`,   `--------------------------------------------------------------\n` +
 		  																													`Guild ID = ${guild.id} - File = ${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')}.txt` +
 																													`\n--------------------------------------------------------------\n`,(err) => {
 			if(err){
@@ -168,7 +199,7 @@ client.on('message', (msg) => {
 		// });
 
 		 //Write new log in latest log file
-		 fs.appendFile(`${__dirname}/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been saved into the Database`,(err) => {
+		 fs.appendFile(`${__dirname}/public/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been saved into the Database`,(err) => {
 		 	if(err){
 		 		throw err;
 		 	}
@@ -207,7 +238,7 @@ client.on('messageDelete', (msg) => {
      }).then((result) => {
 		 console.log(`Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in Guild "${msg.guild.name}" (${msg.guild.id.toString()}) in channel "${msg.channel.name}" (${msg.channel.id}) has been deleted by ${msg.author.tag} (${msg.author.id})`);
 		 
-		 fs.appendFile(`${__dirname}/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been deleted by ${msg.author.tag} (${msg.author.id})`,(err) => {
+		 fs.appendFile(`${__dirname}/public/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been deleted by ${msg.author.tag} (${msg.author.id})`,(err) => {
 			if(err){
 				throw err;
 			}
@@ -241,6 +272,12 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
  	   }, {
  	   returnOriginal: false  
     }).then((result) => {
+		fs.appendFile(`${__dirname}/public/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been edited : "${newMessage.content.toString()}`,(err) => {
+			if(err){
+				throw err;
+			}
+		});
+
 		console.log(`Message #${oldMessage.id} ("${oldMessage.content.toString()}") posted by ${oldMessage.author.tag} (${oldMessage.author.id}) in Guild "${oldMessage.guild.name}" (${oldMessage.guild.id.toString()}) in channel "${oldMessage.channel.name}" (${newMessage.channel.id}) has been edited : "${newMessage.content.toString()}"`);
 	})}, (err) => {
  		console.log(err);
@@ -248,9 +285,9 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 });
 
 // PAGE NOT FOUND REDIRECTS TO HOME
-app.use((req, res, next) => {	// A CERTAIN FORM OF FUNCTION
-	res.redirect('/');
-});
+// app.use((req, res, next) => {	// A CERTAIN FORM OF FUNCTION
+// 	res.redirect('/');
+// });
 
 
 //  Log the bot using the token provided

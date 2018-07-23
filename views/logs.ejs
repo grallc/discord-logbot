@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>List logs file</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <ul>
+        <% files.forEach((file) => { %>
+          <li><a href="/logs/<%= guild %>/<%= file %>"><%= file %></a></li>
+        <% }); %>
+        </ul>
+</body>
+</html>
