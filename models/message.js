@@ -16,13 +16,7 @@ const messageSchema =  mongoose.Schema({
             date: String
         }
     }
-
-	// DEPRECATED
-    // informations: {
-    //     status: {type: String, default: 'OK'},
-    //     currentContent: String,
-    //     lastEventDate: String
-    // }
+    
 }, {
   strict: false
 });

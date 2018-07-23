@@ -95,10 +95,7 @@ app.get('/messages', (req, res) => {
 		//  Find with REGEX
 		'modifications.creation.newContent': (req.query.originalcontent) ? new RegExp(req.query.originalcontent, 'ig') : {$ne:null},
 		currentContent: (req.query.content) ? new RegExp(req.query.content, 'ig') : {$ne:null}
-
-		// DEPRECATED
-		// authorID: (req.query.author) ? req.query.author : {$ne:null},
-        //'informations.currentContent': new RegExp((req.query.content) ? req.query.content : {$ne:null}, 'ig')
+		
 	}).then((messages) => {
         // IF MESSAGE(S) FOUND
         if(messages.length > 0){
@@ -168,30 +165,10 @@ client.on('message', (msg) => {
 				date: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')	
 			}
 		}
-
-		// DEPRECATED
-		// authorID: msg.author.id,
-		// authorUsername: msg.author.tag,
-		// creationDate: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
-		// originalContent: msg.content.toString(),
-		// informations: {
-		// 	currentContent: msg.content.toString(),
-		// 	lastEventDate: new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '')
-		// }
 	});
 
 	message.save().then(() => {
 
-		// DEPRECATED
-		// let latestFile;
-		//
-	  	// fs.readdir(`${__dirname}/logs/${message.guild.id}/`, function(err, files) {
-		// let beforeFileDate;
-		// files.forEach(file => {
-		//   if(file.statSync(file)['mtime'] < beforeFileDate){
-		//
-		//   }
-		// });
 
 		 //Write new log in latest log file
 		 fs.appendFile(`${__dirname}/public/logs/${msg.guild.id}/${fileName}`, `\n${new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '') } - Message #${msg.id} ("${msg.content.toString()}") posted by ${msg.author.tag} (${msg.author.id}) in channel "${msg.channel.name}" (${msg.channel.id}) has been saved into the Database`,(err) => {
@@ -219,14 +196,6 @@ client.on('messageDelete', (msg) => {
 			'modifications.deletion.date': new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
 			'modifications.deletion.authorName': msg.author.tag,
 			'modifications.deletion.authorID': msg.author.id
-
-
-			// DEPRECATED
-			// 'informations.status': 'DELETED',
-			// 'informations.lastEventDate': new Date().toISOString().replace(/T/, ' ').replace(/\..+/, ''),
-
-			//  Not working (for now)
-			// 'informations.removedBy': msg.author.tag
          }
      }, {
          returnOriginal: false
@@ -280,9 +249,9 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 });
 
 // PAGE NOT FOUND REDIRECTS TO HOME
-// app.use((req, res, next) => {	// A CERTAIN FORM OF FUNCTION
-// 	res.redirect('/');
-// });
+app.use((req, res, next) => {
+	res.redirect('/');
+});
 
 
 //  Log the bot using the token provided
