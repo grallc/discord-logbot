@@ -49,36 +49,31 @@ app.get('/', (req, res) => {
 	res.end();
 });
 
-app.get('/logs', (req, res) => {
+// List a guilld logs files'
+app.get('/logs/:guild', (req, res) => {
 
-	if(!req.query.guild){
-		res.status(400).send(JSON.stringify({
-			code: 400,
-			message: 'Please specify a valid Guild ID'
-		}));
-	}
-
-	fs.readdir(`${__dirname}/public/logs/${req.query.guild}`, (err, files) => {
+	fs.readdir(`${__dirname}/public/logs/${req.params.guild}`, (err, files) => {
 		if(err){
-			res.status(404).send(JSON.stringify({
-				code: 404,
+            return res.status(400).send(JSON.stringify({
+                code: 400,
 				message: `An error has occured while listing files. May be caused by an incorrect Guild ID`		
 			}));
-			return console.log(err);
 		}
 
-		res.status(200).render('logs.ejs', {files, guild: req.query.guild});
+
+		res.status(200).render('logs.ejs', {files, guild: req.params.guild});
 		res.end();
-		// res.status(200).send(JSON.stringify({
-		// 	code: 200,
-		// 	message: `Successfully retrieved ${files.length} logs file(s)`,
-		// 	files
-		// }));
-		// files.forEach(file => {
-		//   res.status(200).render(file.name);
-		// });
-	})
-})
+	});
+});
+
+// Redirect to 404 when guild isn't specified
+app.get('/logs/:guild(\\d{0,})', (req, res) => {
+	return res.status(404).send(JSON.stringify({
+		code: 404,
+		message: 'Please specify a valid Guild ID'
+	}));
+});
+
 
 
 // API PAGE
