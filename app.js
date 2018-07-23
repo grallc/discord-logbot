@@ -37,8 +37,16 @@ app.use(
     //  Define the Template system
     bodyParser.json(),
     // SET STATIC FILES -> css/js
-    express.static('public')
+    express.static('public'),
+    //express.directory('public/logs')
 );
+
+
+// TODO (not working)
+// Redirect to / when the page isn't found
+// app.use((req,res,next) => {
+// 	res.redirect('/messages');
+// });
 
 //  Home page (index.ejs): search message, go to API
 app.get('/', (req, res) => {
@@ -46,6 +54,7 @@ app.get('/', (req, res) => {
     res.status(200).render('index.ejs');
 	res.end();
 });
+
 
 // API PAGE
 app.get('/messages', (req, res) => {

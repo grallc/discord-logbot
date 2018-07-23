@@ -2,8 +2,10 @@
 <html>
 <head>
 	<title>Search a message from his content</title>
+	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<a href="messages">Message API</a>
 <form id="searchForm">
 	<p>Search message from content:<br>
 		<input type="radio" name="searchType" id="currentContent" checked><label for="currentContent">Current content</label><br>
@@ -11,7 +13,12 @@
 		<input type="text" id="searchMsgContent" name="searchMsgContent" placeholder="Search message's content..."><br>
 	</p>
 </form>
-<a href="./messages">Message API</a>
+<div id="resultMsg">
+	<div class="message"><span class="msgDate">2018-07-23 13:05:12</span><span class="msgGuild">342229433048104961</span><span class="msgChannel">test</span><span class="msgAuthor">52x44z#0001</span><p class="msgContent">fesse</p></div>
+	<div class="message"><span class="msgDate">2018-07-23 13:05:12</span><span class="msgGuild">342229433048104961</span><span class="msgChannel">test</span><span class="msgAuthor">52x44z#0001</span><p class="msgContent">fesse</p></div>
+	<div class="message"><span class="msgDate">2018-07-23 13:05:12</span><span class="msgGuild">342229433048104961</span><span class="msgChannel">test</span><span class="msgAuthor">52x44z#0001</span><p class="msgContent">fesse</p></div>
+</div>
+
 <script rel="text/javascript">
 	(function(){
 		const searchInput = document.getElementById('searchMsgContent');
@@ -19,20 +26,69 @@
 		let precSearchVal;
 		// CANCEL WRITTING ONLY WHITESPACES
 		searchInput.addEventListener('keydown', function(e){
-			// EVENT keyUp or Down / CHECK IF CHANGED -> STOCK IN VAR PREC VALUE AND COMPARE
 			if(e.keyCode === 32 && !searchInput.value && /^\s*$/g.test(searchInput.value)){
 				e.preventDefault();
 			}
 		});
-		// AJAX
+		// ALL THE AJAX REQUEST
+		// TODO: REMOVE ALL MESSAGES FROM PREC REQUEST
+		// TODO: IN BOLD THE CONTENT SEARCHED
+		// TODO: ALL CONTENT RESEARCH: GUILD, AUTHOUR, (DATE ?), AND ALL MIXED
+		// TODO: LINK, CLICK TO GO TO API ALL INFORMATIONS -> LINK WITH MSG ID
+		// TODO: BEAUTIFY JSON ??
 		searchInput.addEventListener('keyup', function(e){
 			// AJAX TO API
 			if(searchInput.value && !/^\s*$/g.test(searchInput.value) && searchInput.value !== precSearchVal && e.keyCode !== 32) {
+				// REMOVE ALL MESSAGES FROM PREC REQUEST
+				const resultMsg = document.getElementById('resultMsg');
+				while(resultMsg.firstChild){
+					resultMsg.removeChild(resultMsg.firstChild);
+				}
+
+				// AJAX REQUEST
 				const xhr = new XMLHttpRequest();
 				xhr.open('GET', 'messages?'+ ((searchType[0].checked) ? 'content' : 'originalcontent') + '=' + searchInput.value);
 				xhr.addEventListener('readystatechange',function () {	// RECEIVE DATAS
 					if(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200){	// DATAS RECEIVED AND NO ERROR
-						const msgResult = JSON.parse(xhr.responseText);	// ALL MESSAGES FOUND
+						const msgResult = JSON.parse(xhr.responseText).messages;	// ALL MESSAGES FOUND
+						console.log(msgResult.length);
+						// SHOW ALL MESSAGES FROM RESULT
+						for(let i=0, msgResLen=msgResult.length; i<msgResLen; i++){
+							console.log(msgResult);
+							// SHOW 1 MESSAGE ON THE PAGE, IN HTML
+							const msg = document.createElement('div');
+
+							const msgDate = document.createElement('span');
+							msgDate.setAttribute('class','msgDate');
+							msgDate.textContent = msgResult[i]['modifications']['creation']['date'];
+							msg.appendChild(msgDate);
+
+							const msgGuild = document.createElement('span');
+							msgGuild.setAttribute('class','msgGuild');
+							msgGuild.textContent = msgResult[i]['guildID'];
+							msg.appendChild(msgGuild);
+
+							const msgChannel = document.createElement('span');
+							msgChannel.setAttribute('class','msgChannel');
+							msgChannel.textContent = msgResult[i]['channelName'];
+							msg.appendChild(msgChannel);
+
+							const msgAuthor = document.createElement('span');
+							msgAuthor.setAttribute('class','msgAuthor');
+							msgAuthor.textContent = msgResult[i]['modifications']['creation']['authorUsername'];
+							msg.appendChild(msgAuthor);
+
+							const msgContent = document.createElement('p');
+							msgContent.setAttribute('class','msgContent');
+							msgContent.textContent = msgResult[i]['currentContent'];
+							msg.appendChild(msgContent);
+
+							document.getElementById('resultMsg').appendChild(msg);
+						}
+					}else if (!(xhr.readyState === XMLHttpRequest.DONE && xhr.status === 404)) {
+						// NO MESSAGE FOUND
+					}else{
+						// AN ERROR OCCURED
 					}
 				});
 				xhr.send(null);
@@ -49,4 +105,27 @@
 </body>
 </html>
 
-<!--  {code: 200, message: "Successfully retrieved 1 message(s)", messages: Array(1)} -->
+<!-- <div><span class="msgDate">2018-07-23 13:05:12</span><span class="msgGuild">342229433048104961</span><span class="msgChannel">test</span><span class="msgAuthor">52x44z#0001</span><p class="msgContent">fesse</p></div> -->
+<!-- {
+  "code": 200,
+  "message": "Successfully retrieved 1 message(s)",
+  "messages": [
+    {
+      "modifications": {
+        "creation": {
+          "authorID": "161157810086871040",
+          "authorUsername": "52x44z#0001",
+          "newContent": "dzedezdz",
+          "date": "2018-07-22 08:40:56"
+        }
+      },
+      "_id": "5b5443180dfc95041cb5c40c",
+      "messageID": "470510546513428490",
+      "guildID": "342229433048104961",
+      "currentContent": "dzedezdz",
+      "channelName": "test",
+      "channelID": "460009422786265088",
+      "__v": 0
+    }
+  ]
+} -->
