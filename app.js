@@ -42,12 +42,6 @@ app.use(
 );
 
 
-// TODO (not working)
-// Redirect to / when the page isn't found
-// app.use((req,res,next) => {
-// 	res.redirect('/messages');
-// });
-
 //  Home page (index.ejs): search message, go to API
 app.get('/', (req, res) => {
     res.setHeader('Content-Type', 'text/html');    
@@ -251,6 +245,11 @@ client.on('messageUpdate', (oldMessage, newMessage) => {
 	})}, (err) => {
  		console.log(err);
  	});
+});
+
+// PAGE NOT FOUND REDIRECTS TO HOME
+app.use((req, res, next) => {	// A CERTAIN FORM OF FUNCTION
+	res.redirect('/');
 });
 
 
